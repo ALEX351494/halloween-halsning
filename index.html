@@ -3,35 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>En Kuslig Halloween-Hälsning! 🎃</title>
-    <!-- Hämtar läskiga Halloween-typsnitt från Google Fonts -->
+    <title>Magisk & Spöklik Halloween-Hälsning 🎃</title>
+
+    <!-- Google Fonts för klassisk Halloween-känsla -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Mountains+of+Christmas:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Poppins:ital,wght@0,300;0,600;1,400&display=swap" rel="stylesheet">
 
     <style>
-        /* BASE & BACKGROUND STYLES */
+        :root {
+            --orange: #ff6600;
+            --purple: #8a2be2;
+            --dark-purple: #130321;
+            --glow: rgba(255, 102, 0, 0.6);
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            user-select: none;
         }
 
         body {
             min-height: 100vh;
-            background: linear-gradient(135deg, #0d021a 0%, #1f0836 50%, #000000 100%);
+            background: radial-gradient(circle at center, #1a052e 0%, #090012 100%);
             font-family: 'Poppins', sans-serif;
             color: #ffffff;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             overflow-x: hidden;
             position: relative;
         }
 
-        /* ANIMERAD HALLOWEEN-BAKGRUND (FALLANDE PUMPOR & SPÖKEN) */
-        .spooky-rain {
+        /* Canvas för bakgrundseffekter (blixt, dimma, fallande partiklar) */
+        #spookyCanvas {
             position: fixed;
             top: 0;
             left: 0;
@@ -39,276 +47,580 @@
             height: 100%;
             pointer-events: none;
             z-index: 1;
-            overflow: hidden;
         }
 
-        .falling-item {
-            position: absolute;
-            top: -50px;
-            font-size: 2rem;
-            opacity: 0.8;
-            animation: fall linear infinite;
+        /* Blixt-effekt för skärmen */
+        .lightning-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2;
         }
 
-        @keyframes fall {
-            0% {
-                transform: translateY(-50px) rotate(0deg);
-                opacity: 0.9;
-            }
-            100% {
-                transform: translateY(105vh) rotate(360deg);
-                opacity: 0.2;
-            }
+        /* Huvudbehållare */
+        .container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
         }
 
-        /* RUBRIK */
-        h1.title {
+        /* Titlar */
+        h1.main-title {
             font-family: 'Creepster', cursive;
-            font-size: 3rem;
-            color: #ff7518;
-            text-shadow: 0 0 10px #ff7518, 0 0 20px #800080, 0 0 30px #000;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            color: var(--orange);
+            text-shadow: 0 0 10px var(--orange), 0 0 25px var(--purple), 0 0 40px #000;
+            text-align: center;
+            margin-bottom: 5px;
+            letter-spacing: 3px;
+            animation: pulseGlow 3s infinite alternate;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #cbb8e3;
             margin-bottom: 25px;
             text-align: center;
-            letter-spacing: 2px;
-            z-index: 10;
-            animation: pulseGlow 2s infinite alternate;
         }
 
-        @keyframes pulseGlow {
-            from { text-shadow: 0 0 10px #ff7518, 0 0 20px #800080; }
-            to { text-shadow: 0 0 20px #ff7518, 0 0 35px #ff0000, 0 0 10px #ffffff; }
+        /* Kontroller högst upp */
+        .controls-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
-        /* CONTAINER FÖR KUVÄR OCH KORT */
-        .card-container {
+        .btn {
+            background: linear-gradient(135deg, #32104d, #1a052e);
+            border: 2px solid var(--orange);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--orange);
+            background: var(--orange);
+            color: #000;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            background: rgba(20, 5, 35, 0.8);
+            border: 1px solid var(--purple);
+            border-radius: 20px;
+            padding: 5px 15px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        .input-group input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 5px;
+            outline: none;
+            font-family: inherit;
+            width: 150px;
+            text-align: center;
+        }
+
+        /* Nedräkningstimer */
+        .countdown-box {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px dashed var(--orange);
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-bottom: 30px;
+            color: #ffb88c;
+            letter-spacing: 1px;
+        }
+
+        /* 3D-KUVÄRT OCH KORT */
+        .envelope-wrapper {
             position: relative;
-            width: 340px;
-            height: 240px;
-            z-index: 10;
+            width: 320px;
+            height: 220px;
             perspective: 1000px;
             cursor: pointer;
+            margin-top: 10px;
         }
 
-        /* KUVÄRET */
         .envelope {
             width: 100%;
             height: 100%;
-            background: #2a1138;
-            border: 2px solid #ff7518;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 117, 24, 0.3);
+            background: #250936;
+            border: 2px solid #ff6600;
+            border-radius: 12px;
             position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: transform 0.6s ease, opacity 0.5s ease;
-            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.9), 0 0 20px rgba(255, 102, 0, 0.2);
+            transition: transform 0.6s ease;
+            transform-style: preserve-3d;
         }
 
-        .envelope::before {
-            content: '';
+        /* Triangel-lock för kuvertet */
+        .envelope-flap {
             position: absolute;
             top: 0;
+            left: 0;
             width: 0;
             height: 0;
-            border-left: 170px solid transparent;
-            border-right: 170px solid transparent;
-            border-top: 130px solid #3d1b50;
+            border-left: 158px solid transparent;
+            border-right: 158px solid transparent;
+            border-top: 120px solid #3c1354;
             transform-origin: top;
-            transition: transform 0.5s ease;
-            z-index: 3;
+            transition: transform 0.6s ease 0.2s;
+            z-index: 4;
         }
 
-        .envelope-seal {
+        /* Vaxsigill */
+        .wax-seal {
             position: absolute;
-            width: 60px;
-            height: 60px;
-            background: #ff7518;
+            top: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 55px;
+            height: 55px;
+            background: radial-gradient(circle, #ff4500, #8b0000);
             border-radius: 50%;
             display: flex;
-            justify-content: center;
             align-items: center;
-            font-size: 28px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            z-index: 4;
-            transition: transform 0.3s;
-        }
-
-        .envelope:hover .envelope-seal {
-            transform: scale(1.1);
+            justify-content: center;
+            font-size: 26px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.7), inset 0 0 5px rgba(255,255,255,0.3);
+            z-index: 5;
+            transition: all 0.4s ease;
         }
 
         .click-hint {
             position: absolute;
-            bottom: 15px;
-            font-size: 0.9rem;
-            color: #d8b4fe;
-            z-index: 4;
-            font-weight: 600;
-            animation: bounce 1.5s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
-        /* HALLOWEEN-KORTET (VISAS NÄR MAN KLICKAR) */
-        .letter {
-            position: absolute;
-            top: 0;
-            left: 0;
+            bottom: 12px;
             width: 100%;
-            min-height: 380px;
-            background: radial-gradient(circle, #2d0b45 0%, #150224 100%);
-            border: 3px solid #ff7518;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 0 25px rgba(255, 117, 24, 0.6);
+            text-align: center;
+            font-size: 0.85rem;
+            color: #e0c3fc;
+            z-index: 3;
+            animation: bounce 1.8s infinite;
+        }
+
+        /* KORTET INUTI KUVÄRET */
+        .card {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            background: radial-gradient(circle, #2a0845 0%, #120121 100%);
+            border: 2px solid var(--orange);
+            border-radius: 10px;
+            padding: 25px 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
             opacity: 0;
-            transform: scale(0.5) translateY(100px);
-            pointer-events: none;
+            transform: translateY(0) scale(0.9);
             transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 20;
-        }
-
-        /* NÄR KUVÄRET ÖPPNAS */
-        .open .envelope {
-            opacity: 0;
-            transform: scale(0.8) translateY(50px);
+            z-index: 2;
+            box-shadow: 0 0 30px rgba(255, 102, 0, 0.5);
             pointer-events: none;
         }
 
-        .open .letter {
-            opacity: 1;
-            transform: scale(1) translateY(-60px);
-            pointer-events: auto;
-        }
-
-        /* KORTETS INNEHÅLL */
-        .letter h2 {
+        .card h2 {
             font-family: 'Creepster', cursive;
-            color: #ff7518;
+            color: var(--orange);
             font-size: 2.2rem;
             margin-bottom: 10px;
+            letter-spacing: 1px;
         }
 
-        .letter p {
-            font-size: 1.05rem;
+        .card-recipient {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e0aaff;
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            font-size: 0.95rem;
             line-height: 1.6;
-            color: #e2d9f3;
+            color: #d1c4e9;
             margin-bottom: 15px;
         }
 
-        .ghost-img {
-            width: 100px;
-            height: auto;
+        .spooky-avatar {
+            font-size: 3.5rem;
             margin: 10px 0;
-            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.6));
-            animation: float 3s ease-in-out infinite;
+            animation: floatAnim 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.4));
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+        /* ÖPPNAT TILLSTÅND (CSS CLASSES) */
+        .envelope-wrapper.open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
         }
 
-        .close-btn {
-            margin-top: auto;
-            padding: 8px 18px;
-            background: #ff7518;
-            color: #000;
-            border: none;
-            border-radius: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
+        .envelope-wrapper.open .wax-seal {
+            opacity: 0;
+            transform: translateX(-50%) scale(0.5);
         }
 
-        .close-btn:hover {
-            background: #ffa500;
-        }
-
-        /* FOOTER */
-        footer {
-            margin-top: 80px;
-            font-size: 0.85rem;
-            color: #8a73a5;
+        .envelope-wrapper.open .card {
+            opacity: 1;
+            transform: translateY(-130px) scale(1.05);
             z-index: 10;
+            pointer-events: auto;
+        }
+
+        /* ANIMATIONER */
+        @keyframes pulseGlow {
+            from { text-shadow: 0 0 10px var(--orange), 0 0 20px var(--purple); }
+            to { text-shadow: 0 0 20px var(--orange), 0 0 35px #ff0000, 0 0 15px #fff; }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        @keyframes floatAnim {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(5deg); }
+        }
+
+        footer {
+            margin-top: 150px;
+            font-size: 0.8rem;
+            color: #7b6894;
+            z-index: 10;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
-    <!-- Fallande bakgrundsobjekt -->
-    <div class="spooky-rain" id="rainContainer"></div>
+    <!-- Skärmblixt -->
+    <div class="lightning-flash" id="lightning"></div>
 
-    <!-- Rubrik -->
-    <h1 class="title">Bus eller Godis? 🎃</h1>
+    <!-- Canvas för partiklar och dimma -->
+    <canvas id="spookyCanvas"></canvas>
 
-    <!-- Interaktiv kort-container -->
-    <div class="card-container" id="cardContainer" onclick="toggleCard()">
+    <div class="container">
         
-        <!-- Kuvertet -->
-        <div class="envelope">
-            <div class="envelope-seal">🎃</div>
-            <div class="click-hint">Klicka för att öppna! ✉️</div>
+        <h1 class="main-title">Mörkret Faller... 🎃</h1>
+        <p class="subtitle">En interaktiv Halloween-hälsning skapad för dig</p>
+
+        <!-- Nedräkning -->
+        <div class="countdown-box" id="countdown">Laddar nedräkning till Halloween...</div>
+
+        <!-- Kontroller för interaktivitet -->
+        <div class="controls-bar">
+            <div class="input-group">
+                <span style="font-size:0.9rem; color:#aaa;">Till:</span>
+                <input type="text" id="nameInput" placeholder="Skriv ett namn..." value="Klasskompis" oninput="updateRecipient()">
+            </div>
+            <button class="btn" onclick="triggerLightning()">⚡ Framkalla Blixt</button>
+            <button class="btn" onclick="spawnCandyRain()">🍬 Godisregn!</button>
         </div>
 
-        <!-- Hälsningskortet inuti -->
-        <div class="letter" id="letter">
-            <h2>GLAD HALLOWEEN! 👻</h2>
+        <!-- Kuvert & Kort -->
+        <div class="envelope-wrapper" id="envelopeWrapper" onclick="toggleEnvelope()">
             
-            <!-- Spöke / Bild -->
-            <div class="ghost-img">👻</div>
+            <div class="envelope">
+                <div class="envelope-flap"></div>
+                <div class="wax-seal">🎃</div>
+                <div class="click-hint">✉️ Klicka för att bryta sigillet</div>
+            </div>
 
-            <p>
-                Hoppas du får en riktigt läskig och mysig Halloween fylld med massor av godis och inga bus! 🍬🍫
-            </p>
-            <p style="font-style: italic; color: #ff7518; font-size: 0.95rem;">
-                "När mörkret faller och pumporna lyser..."
-            </p>
+            <!-- Själva hälsningskortet -->
+            <div class="card" id="spookyCard">
+                <h2>GLAD HALLOWEEN!</h2>
+                <div class="card-recipient" id="recipientDisplay">Till: Klasskompis</div>
+                <div class="spooky-avatar">👻</div>
+                <p>
+                    Må din natt fyllas av magi, mysterier och massor av godis!
+                    Se upp för skuggorna i mörkret...
+                </p>
+                <button class="btn" style="margin-top:auto;" onclick="event.stopPropagation(); toggleEnvelope();">Stäng Brevet</button>
+            </div>
 
-            <button class="close-btn" onclick="event.stopPropagation(); toggleCard();">Stäng kortet</button>
         </div>
+
+        <footer>
+            Skapad med HTML, CSS & JavaScript | Halloween 2026
+        </footer>
 
     </div>
 
-    <footer>
-        Skapad av mig | Halloween 2026
-    </footer>
-
     <script>
-        // Funktion för att öppna/stänga kuvertet
-        function toggleCard() {
-            const container = document.getElementById('cardContainer');
-            container.classList.toggle('open');
+        /* ===================================================
+           1. SYNTHESIZED WEB AUDIO API (Genererar alla ljud!)
+           =================================================== */
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioCtx();
+            }
         }
 
-        // Skapa fallande pumpor, spöken och fladdermöss i bakgrunden
-        const items = ['🎃', '👻', '🦇', '🕷️', '🍬'];
-        const rainContainer = document.getElementById('rainContainer');
-        const itemCount = 25; // Antal fallande objekt
+        // Ljud 1: Kuslig synthesizer-ackord vid öppning
+        function playSpookySound() {
+            initAudio();
+            if (!audioCtx) return;
 
-        for (let i = 0; i < itemCount; i++) {
-            const item = document.createElement('div');
-            item.classList.add('falling-item');
-            
-            // Slumpa symbol
-            item.innerText = items[Math.floor(Math.random() * items.length)];
-            
-            // Slumpa position och animationstid
-            item.style.left = Math.random() * 100 + 'vw';
-            item.style.animationDuration = (Math.random() * 3 + 4) + 's'; // 4-7 sekunder
-            item.style.animationDelay = (Math.random() * 5) + 's';
-            item.style.fontSize = (Math.random() * 1.5 + 1.2) + 'rem';
+            const freqs = [130.81, 155.56, 196.00, 246.94]; // C minor / maj7 eerie chord
+            freqs.forEach((f, index) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
 
-            rainContainer.appendChild(item);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+
+                // Lågpassfilter för kuslig resonans
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(400 + index * 100, audioCtx.currentTime);
+
+                gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.12, audioCtx.currentTime + 0.3);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
+
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 2.5);
+            });
         }
+
+        // Ljud 2: Åskmuller vid blixt
+        function playThunderSound() {
+            initAudio();
+            if (!audioCtx) return;
+
+            // Skapa vitt brus för åska
+            const bufferSize = audioCtx.sampleRate * 2;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(300, audioCtx.currentTime);
+            filter.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 1.8);
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.8);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            noise.start();
+        }
+
+        // Ljud 3: Lite kort vaxsigill-klick
+        function playSealCrackSound() {
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.1);
+
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        /* ===================================================
+           2. INTERAKTIVITET & LOGIK
+           =================================================== */
+        function toggleEnvelope() {
+            const wrapper = document.getElementById('envelopeWrapper');
+            const isOpen = wrapper.classList.contains('open');
+
+            if (!isOpen) {
+                playSealCrackSound();
+                setTimeout(() => {
+                    playSpookySound();
+                }, 200);
+                wrapper.classList.add('open');
+            } else {
+                wrapper.classList.remove('open');
+            }
+        }
+
+        function updateRecipient() {
+            const name = document.getElementById('nameInput').value;
+            const display = document.getElementById('recipientDisplay');
+            display.innerText = name.trim() ? `Till: ${name}` : 'Till: Alla Spöken';
+        }
+
+        function triggerLightning() {
+            playThunderSound();
+            const lightning = document.getElementById('lightning');
+            
+            // Slumpmässiga blixtststötar
+            lightning.style.opacity = '0.9';
+            setTimeout(() => { lightning.style.opacity = '0.1'; }, 50);
+            setTimeout(() => { lightning.style.opacity = '0.8'; }, 100);
+            setTimeout(() => { lightning.style.opacity = '0'; }, 250);
+        }
+
+        /* ===================================================
+           3. LIVE NEDRÄKNINGSTIMER
+           =================================================== */
+        function updateCountdown() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            let halloweenDate = new Date(`October 31, ${currentYear} 00:00:00`);
+
+            if (now > halloweenDate) {
+                halloweenDate = new Date(`October 31, ${currentYear + 1} 00:00:00`);
+            }
+
+            const diff = halloweenDate - now;
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((diff / 1000 / 60) % 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+
+            document.getElementById('countdown').innerText = 
+                `⏳ Tid kvar till Halloween: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        /* ===================================================
+           4. CANVAS PARTIKELANIMATION (PUMPOR & DIMMA)
+           =================================================== */
+        const canvas = document.getElementById('spookyCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const symbols = ['🎃', '👻', '🦇', '🕷️', '💀'];
+        const particles = [];
+
+        class Particle {
+            constructor(emoji = null) {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * -canvas.height;
+                this.size = Math.random() * 20 + 20;
+                this.speedY = Math.random() * 1.5 + 0.8;
+                this.speedX = Math.sin(Math.random() * Math.PI) * 0.8;
+                this.emoji = emoji || symbols[Math.floor(Math.random() * symbols.length)];
+                this.rotation = Math.random() * 360;
+                this.rotSpeed = (Math.random() - 0.5) * 2;
+                this.opacity = Math.random() * 0.7 + 0.3;
+            }
+
+            update() {
+                this.y += this.speedY;
+                this.x += this.speedX;
+                this.rotation += this.rotSpeed;
+
+                if (this.y > canvas.height + 50) {
+                    this.y = -50;
+                    this.x = Math.random() * canvas.width;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate((this.rotation * Math.PI) / 180);
+                ctx.globalAlpha = this.opacity;
+                ctx.font = `${this.size}px serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.emoji, 0, 0);
+                ctx.restore();
+            }
+        }
+
+        // Skapa initiala partiklar
+        for (let i = 0; i < 35; i++) {
+            particles.push(new Particle());
+        }
+
+        // Godisregn-funktion
+        function spawnCandyRain() {
+            const candies = ['🍬', '🍭', '🍫'];
+            for (let i = 0; i < 25; i++) {
+                const candy = new Particle(candies[Math.floor(Math.random() * candies.length)]);
+                candy.y = -20;
+                candy.speedY = Math.random() * 3 + 2;
+                particles.push(candy);
+            }
+        }
+
+        // Animationsloop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+
+                // Ta bort extra godispartiklar när de når botten
+                if (p.y > canvas.height + 40 && particles.length > 35) {
+                    particles.splice(index, 1);
+                }
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
     </script>
 </body>
 </html>
