@@ -38,7 +38,7 @@
             position: relative;
         }
 
-        /* Canvas för bakgrundseffekter (blixt, dimma, fallande partiklar) */
+        /* Canvas för bakgrundseffekter */
         #spookyCanvas {
             position: fixed;
             top: 0;
@@ -49,7 +49,7 @@
             z-index: 1;
         }
 
-        /* Blixt-effekt för skärmen */
+        /* Blixt-effekt */
         .lightning-flash {
             position: fixed;
             top: 0;
@@ -93,7 +93,7 @@
             text-align: center;
         }
 
-        /* Kontroller högst upp */
+        /* Kontroller */
         .controls-bar {
             display: flex;
             gap: 15px;
@@ -118,11 +118,17 @@
             transition: all 0.3s ease;
         }
 
-        .btn:hover {
+        .btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 0 15px var(--orange);
             background: var(--orange);
             color: #000;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #555;
         }
 
         .input-group {
@@ -180,7 +186,6 @@
             transform-style: preserve-3d;
         }
 
-        /* Triangel-lock för kuvertet */
         .envelope-flap {
             position: absolute;
             top: 0;
@@ -195,7 +200,6 @@
             z-index: 4;
         }
 
-        /* Vaxsigill */
         .wax-seal {
             position: absolute;
             top: 85px;
@@ -277,7 +281,7 @@
             filter: drop-shadow(0 0 10px rgba(255,255,255,0.4));
         }
 
-        /* ÖPPNAT TILLSTÅND (CSS CLASSES) */
+        /* ÖPPNAT TILLSTÅND */
         .envelope-wrapper.open .envelope-flap {
             transform: rotateX(180deg);
             z-index: 1;
@@ -325,7 +329,7 @@
     <!-- Skärmblixt -->
     <div class="lightning-flash" id="lightning"></div>
 
-    <!-- Canvas för partiklar och dimma -->
+    <!-- Canvas för partiklar -->
     <canvas id="spookyCanvas"></canvas>
 
     <div class="container">
@@ -336,14 +340,14 @@
         <!-- Nedräkning -->
         <div class="countdown-box" id="countdown">Laddar nedräkning till Halloween...</div>
 
-        <!-- Kontroller för interaktivitet -->
+        <!-- Kontroller -->
         <div class="controls-bar">
             <div class="input-group">
                 <span style="font-size:0.9rem; color:#aaa;">Till:</span>
                 <input type="text" id="nameInput" placeholder="Skriv ett namn..." value="Klasskompis" oninput="updateRecipient()">
             </div>
             <button class="btn" onclick="triggerLightning()">⚡ Framkalla Blixt</button>
-            <button class="btn" onclick="spawnCandyRain()">🍬 Godisregn!</button>
+            <button class="btn" id="candyBtn" onclick="spawnCandyRain()">🍬 Godisregn!</button>
         </div>
 
         <!-- Kuvert & Kort -->
@@ -355,7 +359,7 @@
                 <div class="click-hint">✉️ Klicka för att bryta sigillet</div>
             </div>
 
-            <!-- Själva hälsningskortet -->
+            <!-- Hälsningskortet -->
             <div class="card" id="spookyCard">
                 <h2>GLAD HALLOWEEN!</h2>
                 <div class="card-recipient" id="recipientDisplay">Till: Klasskompis</div>
@@ -377,7 +381,7 @@
 
     <script>
         /* ===================================================
-           1. SYNTHESIZED WEB AUDIO API (Genererar alla ljud!)
+           1. SYNTHESIZED WEB AUDIO API
            =================================================== */
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         let audioCtx = null;
@@ -388,12 +392,11 @@
             }
         }
 
-        // Ljud 1: Kuslig synthesizer-ackord vid öppning
         function playSpookySound() {
             initAudio();
             if (!audioCtx) return;
 
-            const freqs = [130.81, 155.56, 196.00, 246.94]; // C minor / maj7 eerie chord
+            const freqs = [130.81, 155.56, 196.00, 246.94];
             freqs.forEach((f, index) => {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
@@ -401,7 +404,6 @@
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(f, audioCtx.currentTime);
 
-                // Lågpassfilter för kuslig resonans
                 const filter = audioCtx.createBiquadFilter();
                 filter.type = 'lowpass';
                 filter.frequency.setValueAtTime(400 + index * 100, audioCtx.currentTime);
@@ -419,12 +421,10 @@
             });
         }
 
-        // Ljud 2: Åskmuller vid blixt
         function playThunderSound() {
             initAudio();
             if (!audioCtx) return;
 
-            // Skapa vitt brus för åska
             const bufferSize = audioCtx.sampleRate * 2;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -451,7 +451,6 @@
             noise.start();
         }
 
-        // Ljud 3: Lite kort vaxsigill-klick
         function playSealCrackSound() {
             initAudio();
             if (!audioCtx) return;
@@ -501,7 +500,6 @@
             playThunderSound();
             const lightning = document.getElementById('lightning');
             
-            // Slumpmässiga blixtststötar
             lightning.style.opacity = '0.9';
             setTimeout(() => { lightning.style.opacity = '0.1'; }, 50);
             setTimeout(() => { lightning.style.opacity = '0.8'; }, 100);
@@ -535,7 +533,7 @@
         updateCountdown();
 
         /* ===================================================
-           4. CANVAS PARTIKELANIMATION (PUMPOR & DIMMA)
+           4. CANVAS PARTIKELANIMATION (OPTIMERAD)
            =================================================== */
         const canvas = document.getElementById('spookyCanvas');
         const ctx = canvas.getContext('2d');
@@ -554,13 +552,13 @@
             constructor(emoji = null) {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * -canvas.height;
-                this.size = Math.random() * 20 + 20;
-                this.speedY = Math.random() * 1.5 + 0.8;
-                this.speedX = Math.sin(Math.random() * Math.PI) * 0.8;
+                this.size = Math.random() * 15 + 18;
+                this.speedY = Math.random() * 1.2 + 0.6;
+                this.speedX = Math.sin(Math.random() * Math.PI) * 0.5;
                 this.emoji = emoji || symbols[Math.floor(Math.random() * symbols.length)];
                 this.rotation = Math.random() * 360;
-                this.rotSpeed = (Math.random() - 0.5) * 2;
-                this.opacity = Math.random() * 0.7 + 0.3;
+                this.rotSpeed = (Math.random() - 0.5) * 1.5;
+                this.opacity = Math.random() * 0.6 + 0.3;
             }
 
             update() {
@@ -587,35 +585,47 @@
             }
         }
 
-        // Skapa initiala partiklar
-        for (let i = 0; i < 35; i++) {
+        // Minskat antal standardpartiklar till 18 för bättre prestanda
+        const MAX_BASE_PARTICLES = 18;
+        for (let i = 0; i < MAX_BASE_PARTICLES; i++) {
             particles.push(new Particle());
         }
 
-        // Godisregn-funktion
+        // OPTIMERAT GODISREGN OCH SPAM-SKYDD
         function spawnCandyRain() {
+            const btn = document.getElementById('candyBtn');
+            btn.disabled = true; // Inaktivera knappen tillfälligt
+            
             const candies = ['🍬', '🍭', '🍫'];
-            for (let i = 0; i < 25; i++) {
+            
+            // Endast 8 godisbitar släpps åt gången
+            for (let i = 0; i < 8; i++) {
                 const candy = new Particle(candies[Math.floor(Math.random() * candies.length)]);
                 candy.y = -20;
-                candy.speedY = Math.random() * 3 + 2;
+                candy.speedY = Math.random() * 2 + 1.5;
                 particles.push(candy);
             }
+
+            // Aktivera knappen igen efter 3 sekunder
+            setTimeout(() => {
+                btn.disabled = false;
+            }, 3000);
         }
 
         // Animationsloop
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            particles.forEach((p, index) => {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
                 p.update();
                 p.draw();
 
-                // Ta bort extra godispartiklar när de når botten
-                if (p.y > canvas.height + 40 && particles.length > 35) {
-                    particles.splice(index, 1);
+                // Ta bort extra godispartiklar när de försvinner längst ner
+                if (p.y > canvas.height + 40 && particles.length > MAX_BASE_PARTICLES) {
+                    particles.splice(i, 1);
                 }
-            });
+            }
 
             requestAnimationFrame(animate);
         }
