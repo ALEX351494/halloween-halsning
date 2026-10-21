@@ -6,18 +6,18 @@ const cardWindow = $("cardWindow");
 const updateScreen = $("updateScreen");
 const toast = $("toast");
 
-let audioContext = null;
+let audioContext;
 let chaosStarted = false;
 let toastTimer;
-let sequenceTimer;
+let chaosTimers = [];
 
 const errors = [
   ["VIRUS DETECTED", "Ett spöke har hittat in i datorn!"],
   ["UPDATE FAILED", "Pumpauppdateringen misslyckades."],
   ["ERROR 404", "Det efterfrågade godiset saknas."],
   ["CRITICAL ERROR", "För många spöken i systemet!"],
-  ["WARNING", "En fladdermus har tagit över skrivbordet."],
-  ["SYSTEM ALERT", "Tangentbordet är hemsökt."],
+  ["SYSTEM ALERT", "En fladdermus har tagit över skrivbordet."],
+  ["WARNING", "Tangentbordet är hemsökt."],
   ["UPDATE REQUIRED", "Installera fler Halloween-pumpor."],
   ["ERROR 666", "Mystisk aktivitet upptäckt!"],
   ["VIRUS DETECTED", "En zombie har hittat dina filer."],
@@ -25,94 +25,52 @@ const errors = [
   ["FATAL ERROR", "Spöket vägrar lämna datorn."],
   ["SYSTEM WARNING", "Fladdermöss upptäckta i systemet."],
   ["UPDATE FAILED", "Häxkvasten kunde inte uppdateras."],
-  ["ERROR", "Halloween-systemet har blivit för spöklikt."],
+  ["SYSTEM ERROR", "Halloween-systemet är hemsökt."],
   ["FINAL WARNING", "Du har väckt alla 15 spöken!"]
 ];
 
-// Skapa ljud direkt i webbläsaren.
-function getAudio() {
+function playTone(frequency = 440, duration = 0.18) {
   const AudioClass =
     window.AudioContext || window.webkitAudioContext;
 
-  if (!AudioClass) return null;
+  if (!AudioClass) return;
 
-  if (!audioContext) {
-    audioContext = new AudioClass();
-  }
+  try {
+    audioContext ??= new AudioClass();
 
-  if (audioContext.state === "suspended") {
-    audioContext.resume().catch(() => {});
-  }
+    if (audioContext.state === "suspended") {
+      audioContext.resume();
+    }
 
-  return audioContext;
-}
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
 
-// Ett kort elektroniskt uppdateringsljud.
-function playUpdateSound(index = 0) {
-  const audio = getAudio();
-  if (!audio) return;
-
-  const oscillator = audio.createOscillator();
-  const gain = audio.createGain();
-
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(
-    index % 2 === 0 ? 660 : 440,
-    audio.currentTime
-  );
-  oscillator.frequency.setValueAtTime(
-    index % 2 === 0 ? 440 : 660,
-    audio.currentTime + 0.1
-  );
-
-  gain.gain.setValueAtTime(0.0001, audio.currentTime);
-  gain.gain.exponentialRampToValueAtTime(
-    0.12,
-    audio.currentTime + 0.02
-  );
-  gain.gain.exponentialRampToValueAtTime(
-    0.0001,
-    audio.currentTime + 0.22
-  );
-
-  oscillator.connect(gain);
-  gain.connect(audio.destination);
-
-  oscillator.start();
-  oscillator.stop(audio.currentTime + 0.23);
-}
-
-// Lite kuslig, låg ton.
-function playSpookySound() {
-  const audio = getAudio();
-  if (!audio) return;
-
-  [110, 146.83, 174.61].forEach((frequency) => {
-    const oscillator = audio.createOscillator();
-    const gain = audio.createGain();
-
-    oscillator.type = "triangle";
+    oscillator.type = "sine";
     oscillator.frequency.setValueAtTime(
-      frequency,
-      audio.currentTime
+      frequency, audioContext.currentTime
     );
 
-    gain.gain.setValueAtTime(0.0001, audio.currentTime);
+    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
     gain.gain.exponentialRampToValueAtTime(
-      0.045,
-      audio.currentTime + 0.25
+      0.07, audioContext.currentTime + 0.02
     );
     gain.gain.exponentialRampToValueAtTime(
-      0.0001,
-      audio.currentTime + 1.5
+      0.0001, audioContext.currentTime + duration
     );
 
     oscillator.connect(gain);
-    gain.connect(audio.destination);
-
+    gain.connect(audioContext.destination);
     oscillator.start();
-    oscillator.stop(audio.currentTime + 1.55);
-  });
+    oscillator.stop(audioContext.currentTime + duration);
+  } catch (error) {
+    console.warn("Ljud kunde inte spelas upp.", error);
+  }
+}
+
+function playSpookySound() {
+  playTone(130, 0.7);
+  setTimeout(() => playTone(174, 0.8), 180);
+  setTimeout(() => playTone(110, 1), 380);
 }
 
 function showToast(message) {
@@ -122,52 +80,68 @@ function showToast(message) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     toast.classList.add("hidden");
-  }, 3000);
+  }, 3500);
 }
 
-// Öppna Halloween-appen.
+function openWindow(id) {
+  $(id).classList.remove("hidden");
+  playTone(520, 0.12);
+}
+
 $("openCard").addEventListener("click", () => {
-  cardWindow.classList.remove("hidden");
+  openWindow("cardWindow");
   playSpookySound();
 });
 
-// Stäng kortfönstret med X-knappen.
+$("welcomeOpen").addEventListener("click", () => {
+  openWindow("cardWindow");
+  playSpookySound();
+});
+
+$("taskbarCard").addEventListener("click", () => {
+  openWindow("cardWindow");
+});
+
+$("openComputer").addEventListener("click", () => {
+  openWindow("computerWindow");
+});
+
+$("openBin").addEventListener("click", () => {
+  openWindow("binWindow");
+});
+
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => {
     $(button.dataset.close).classList.add("hidden");
+    playTone(300, 0.1);
   });
 });
 
-// Skapa ett fejkfel som bara finns på hemsidan.
 function createError(message, index) {
   const box = document.createElement("section");
   box.className = "error-window";
   box.setAttribute("role", "dialog");
   box.setAttribute("aria-label", message[0]);
 
-  const width = Math.min(280, desktop.clientWidth - 24);
-  const height = 160;
+  const width = Math.min(280, desktop.clientWidth - 30);
   const maxX = Math.max(0, desktop.clientWidth - width);
-  const maxY = Math.max(
-    0,
-    desktop.clientHeight - height - 55
-  );
+  const maxY = Math.max(75, desktop.clientHeight - 230);
 
   box.style.left = `${Math.random() * maxX}px`;
-  box.style.top = `${Math.random() * maxY}px`;
+  box.style.top = `${65 + Math.random() * (maxY - 65)}px`;
 
   const title = document.createElement("div");
   title.className = "error-title";
 
-  const titleText = document.createElement("span");
-  titleText.textContent = `⚠ ${message[0]}`;
+  const label = document.createElement("span");
+  label.textContent = `⚠ ${message[0]}`;
 
-  const xButton = document.createElement("button");
-  xButton.type = "button";
-  xButton.textContent = "×";
-  xButton.setAttribute("aria-label", "Stäng felmeddelandet");
+  const close = document.createElement("button");
+  close.type = "button";
+  close.textContent = "×";
+  close.setAttribute("aria-label", "Stäng felmeddelandet");
 
-  title.append(titleText, xButton);
+  title.append(label, close);
 
   const body = document.createElement("div");
   body.className = "error-body";
@@ -192,78 +166,111 @@ function createError(message, index) {
   const actions = document.createElement("div");
   actions.className = "error-actions";
 
-  const okButton = document.createElement("button");
-  okButton.type = "button";
-  okButton.textContent = "OK";
+  const ok = document.createElement("button");
+  ok.type = "button";
+  ok.textContent = "OK";
+  actions.append(ok);
 
-  actions.append(okButton);
   box.append(title, body, actions);
-
-  const close = () => box.remove();
-
-  xButton.addEventListener("click", close);
-  okButton.addEventListener("click", close);
-
   desktop.append(box);
+
+  function dismiss() {
+    box.remove();
+    playTone(360, 0.08);
+  }
+
+  close.addEventListener("click", dismiss);
+  ok.addEventListener("click", dismiss);
 }
 
-// Visa fejkad uppdatering och därefter exakt 15 fel.
 function startChaos() {
   if (chaosStarted) return;
-
   chaosStarted = true;
+
   cardWindow.classList.add("hidden");
   updateScreen.classList.remove("hidden");
 
-  playUpdateSound(0);
-  showToast("⚠️ Mystiska uppdateringar startar...");
+  showToast("⚠️ Halloween-uppdatering startar...");
+  playTone(260, 0.3);
 
-  sequenceTimer = setTimeout(() => {
+  const updateMessages = [
+    "Kontrollerar spökfiler...",
+    "Installerar pumpauppdateringar...",
+    "Startar om spöksystemet..."
+  ];
+
+  const percent = $("updatePercent");
+  let step = 0;
+
+  const progressTimer = setInterval(() => {
+    if (step < updateMessages.length) {
+      percent.textContent = updateMessages[step];
+      playTone(440 + step * 80, 0.12);
+      step++;
+    } else {
+      clearInterval(progressTimer);
+    }
+  }, 650);
+
+  chaosTimers.push(progressTimer);
+
+  chaosTimers.push(setTimeout(() => {
     updateScreen.classList.add("hidden");
     playSpookySound();
 
     errors.forEach((message, index) => {
-      setTimeout(() => {
+      chaosTimers.push(setTimeout(() => {
         createError(message, index);
-        playUpdateSound(index);
+        playTone(index % 2 === 0 ? 620 : 420, 0.15);
 
         if (index === errors.length - 1) {
           showToast(
-            "👻 15 fejkade fel! Klicka OK eller × för att stänga dem."
+            "👻 15 fejkade fel! Stäng dem med × eller OK."
           );
         }
-      }, index * 180);
+      }, index * 220));
     });
-  }, 2500);
+  }, 2500));
 }
 
 $("closeCard").addEventListener("click", startChaos);
 
-// Klockan nere i aktivitetsfältet.
 function updateClock() {
+  const now = new Date();
+
   $("clock").textContent = new Intl.DateTimeFormat("sv-SE", {
     hour: "2-digit",
     minute: "2-digit"
-  }).format(new Date());
+  }).format(now);
+
+  $("date").textContent = new Intl.DateTimeFormat("sv-SE", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(now);
 }
 
 updateClock();
 setInterval(updateClock, 1000);
 
-// Startknappen återställer det virtuella skrivbordet.
 $("startButton").addEventListener("click", () => {
-  clearTimeout(sequenceTimer);
-  clearTimeout(toastTimer);
+  chaosTimers.forEach((timer) => {
+    clearTimeout(timer);
+    clearInterval(timer);
+  });
+  chaosTimers = [];
 
   desktop.querySelectorAll(".error-window").forEach((box) => {
     box.remove();
   });
 
-  cardWindow.classList.add("hidden");
+  document.querySelectorAll(".window").forEach((win) => {
+    win.classList.add("hidden");
+  });
+
   updateScreen.classList.add("hidden");
   toast.classList.add("hidden");
-
   chaosStarted = false;
 
-  showToast("🎃 Skrivbordet har återställts!");
+  showToast("🎃 Skrivbordet är återställt!");
 });
