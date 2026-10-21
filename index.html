@@ -1,124 +1,129 @@
+
 <!DOCTYPE html>
 <html lang="sv">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#100d1b">
-  <title>Halloween OS</title>
+  <meta name="theme-color" content="#100b19">
+  <title>Halloween OS 🎃</title>
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
 </head>
 <body>
-  <main class="desktop" id="desktop">
-    <div class="wallpaper-glow"></div>
+  <main id="desktop" class="desktop">
+    <div class="desktop-wallpaper"></div>
 
-    <header class="topbar">
-      <div class="brand"><span>◈</span> HALLOWEEN OS</div>
-      <div class="top-status"><span class="status-dot"></span> SYSTEM ONLINE</div>
-    </header>
-
-    <section class="desktop-icons" aria-label="Skrivbordsappar">
+    <div class="desktop-icons">
       <button class="desktop-icon" id="openCard">
-        <span class="icon-tile folder-icon">📁</span>
-        <span>Halloween kort</span>
+        <span class="folder-icon">📁</span>
+        <span>Halloween-kort</span>
       </button>
+
       <button class="desktop-icon" id="openComputer">
-        <span class="icon-tile">🖥️</span>
+        <span class="folder-icon">🖥️</span>
         <span>Den här datorn</span>
       </button>
+
       <button class="desktop-icon" id="openBin">
-        <span class="icon-tile">🗑️</span>
+        <span class="folder-icon">🗑️</span>
         <span>Papperskorg</span>
       </button>
-    </section>
-
-    <div class="welcome">
-      <div class="welcome-label">31 OKTOBER · SPECIAL EDITION</div>
-      <h1>Welcome to the <span>dark side.</span></h1>
-      <p>Ditt skrivbord. Dina filer. Något väntar i mörkret.</p>
-      <button class="primary-button" id="welcomeOpen">Öppna Halloween-kort ↗</button>
     </div>
 
-    <section class="window hidden" id="cardWindow" aria-label="Halloween-kort">
-      <div class="window-bar">
-        <div class="window-caption"><span>📁</span> Halloween kort</div>
-        <div class="window-controls">
-          <button data-close="cardWindow" aria-label="Minimera">−</button>
-          <button data-close="cardWindow" aria-label="Stäng fönster">×</button>
-        </div>
+    <section id="cardWindow" class="window card-window hidden">
+      <header class="window-title">
+        <span>🎃 Halloween-kort</span>
+        <button class="window-close" data-close="cardWindow"
+          aria-label="Stäng fönstret">×</button>
+      </header>
+
+      <div class="window-content greeting">
+        <div class="pumpkin">🎃</div>
+        <p class="eyebrow">ETT LITET MEDDELANDE TILL DIG</p>
+        <h1>Glad Halloween!</h1>
+        <p class="recipient">Till min lärare 👻</p>
+        <p>
+          Tack för att du lär oss nya saker och hjälper oss att utvecklas.
+          Hoppas du får en magisk Halloween fylld av glädje, godis
+          och lagom många spöken!
+        </p>
+        <div class="card-decoration">🕯️ 🦇 🕸️ 🦇 🕯️</div>
+        <button id="closeCard" class="primary-button">
+          Stäng fönstret
+        </button>
       </div>
+    </section>
+
+    <section id="computerWindow" class="window small-window hidden">
+      <header class="window-title">
+        <span>🖥️ Den här datorn</span>
+        <button class="window-close" data-close="computerWindow"
+          aria-label="Stäng fönstret">×</button>
+      </header>
       <div class="window-content">
-        <div class="breadcrumb">Den här datorn　›　Skrivbord　›　Halloween kort</div>
-        <div class="file-preview">
-          <div class="preview-icon">💌</div>
-          <div>
-            <h2>En hälsning till dig</h2>
-            <p>En liten överraskning från mörkret...</p>
-          </div>
-        </div>
-        <article class="greeting-card">
-          <div class="card-stars">✦　✧　✦</div>
-          <div class="pumpkin">🎃</div>
-          <p class="eyebrow">EN HÄLSNING FRÅN MÖRKRET</p>
-          <h2>Glad Halloween!</h2>
-          <p class="recipient">Till min lärare 🖤</p>
-          <div class="card-divider"></div>
-          <p class="greeting-message">
-            Tack för allt du lär oss!
-            Hoppas du får en riktigt fin Halloween
-            fylld med magi, mysterier och godis.
-          </p>
-          <div class="ghost-row">👻　🦇　🕸️</div>
-          <p class="card-signature">Med vänliga hälsningar · Din elev</p>
-        </article>
-        <div class="window-footer">
-          <span>💜 En liten digital överraskning</span>
-          <button class="primary-button close-card" id="closeCard">STÄNG FÖNSTRET</button>
-        </div>
+        <h2>En hemsökt dator</h2>
+        <p>Systemstatus: <span class="green-text">Till synes normal...</span></p>
+        <p>Ledigt utrymme: 666 GB</p>
+        <p>Antal upptäckta spöken: Okänt</p>
       </div>
     </section>
 
-    <section class="window hidden small-window" id="computerWindow">
-      <div class="window-bar">
-        <div class="window-caption">🖥️ Den här datorn</div>
-        <div class="window-controls"><button data-close="computerWindow">×</button></div>
-      </div>
-      <div class="utility-content">
-        <h2>Enhet och lagring</h2>
-        <div class="drive">💽 <div><strong>Lokal disk (C:)</strong><p>Allt ser lugnt ut... just nu.</p></div></div>
-        <div class="drive">📂 <div><strong>Skrivbord</strong><p>3 objekt</p></div></div>
-      </div>
-    </section>
-
-    <section class="window hidden small-window" id="binWindow">
-      <div class="window-bar">
-        <div class="window-caption">🗑️ Papperskorg</div>
-        <div class="window-controls"><button data-close="binWindow">×</button></div>
-      </div>
-      <div class="utility-content">
-        <div class="empty-bin">🕸️<p>Papperskorgen är tom.</p></div>
+    <section id="binWindow" class="window small-window hidden">
+      <header class="window-title">
+        <span>🗑️ Papperskorg</span>
+        <button class="window-close" data-close="binWindow"
+          aria-label="Stäng fönstret">×</button>
+      </header>
+      <div class="window-content">
+        <div class="large-emoji">👻</div>
+        <p>Papperskorgen är full av spöken.</p>
+        <p>De vill inte bli borttagna.</p>
       </div>
     </section>
 
-    <section class="update-screen hidden" id="updateScreen">
-      <div class="update-content">
-        <div class="update-spinner"></div>
-        <h2>Arbetar med uppdateringar</h2>
-        <p>Stäng inte av datorn...</p>
-        <div class="progress-track"><div class="progress-fill"></div></div>
-        <span id="updatePercent">Förbereder spöklig uppdatering...</span>
-        <div class="update-skull">☠</div>
+    <section id="updateScreen" class="update-screen hidden">
+      <div class="update-symbol">☠️</div>
+      <h2>HALLOWEEN SYSTEM UPDATE</h2>
+      <p id="updatePercent">Söker efter spöken...</p>
+      <div class="progress-track">
+        <div class="progress-fill"></div>
       </div>
+      <p class="update-small">Stäng inte av din hemsökta dator.</p>
     </section>
 
-    <div class="toast hidden" id="toast" role="status"></div>
+    <div id="toast" class="toast hidden" role="status"></div>
+
+    <div id="blackout" class="blackout hidden">
+      <div id="ghostScene" class="ghost-scene hidden">
+        <div class="ghost">👻</div>
+        <h2>DU ÄR INTE ENSAM...</h2>
+        <p>Spöket hittade dig.</p>
+        <button id="returnDesktop" class="primary-button">
+          Tillbaka till skrivbordet
+        </button>
+      </div>
+    </div>
 
     <footer class="taskbar">
-      <button class="start-button" id="startButton" aria-label="Start">◈</button>
-      <button class="taskbar-app" id="taskbarCard">🎃 <span>Halloween kort</span></button>
+      <button id="startButton" class="start-button" aria-label="Start">
+        ⊞ <span>Start</span>
+      </button>
+      <div class="taskbar-divider"></div>
+      <button id="taskbarCard" class="taskbar-app">
+        🎃 <span>Halloween-kort</span>
+      </button>
       <div class="taskbar-spacer"></div>
-      <div class="taskbar-status"><span>☾</span><span>⌁</span><span>🔊</span></div>
-      <div class="clock-area"><strong id="clock">00:00</strong><span id="date">2026-10-31</span></div>
+      <div class="system-tray">
+        <span title="Spökskydd">🛡️</span>
+        <span title="Nätverk">⌁</span>
+        <div class="clock-wrap">
+          <span id="clock">00:00</span>
+          <span id="date">2026-10-31</span>
+        </div>
+      </div>
+      <button id="restartButton" class="restart-button">
+        ⏻ Starta om
+      </button>
     </footer>
   </main>
 </body>
