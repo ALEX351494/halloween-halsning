@@ -1,45 +1,58 @@
 
+"use strict";
+
 const $ = (id) => document.getElementById(id);
 
 const desktop = $("desktop");
 const cardWindow = $("cardWindow");
 const updateScreen = $("updateScreen");
+const blackout = $("blackout");
+const ghostScene = $("ghostScene");
 const toast = $("toast");
 
-let audioContext;
+let audioContext = null;
 let chaosStarted = false;
-let toastTimer;
-let chaosTimers = [];
+let restartInProgress = false;
+let toastTimer = null;
+let sequenceTimers = [];
 
-const errors = [
-  ["VIRUS DETECTED", "Ett spöke har hittat in i datorn!"],
+const errorMessages = [
+  ["VIRUS DETECTED", "Ett spöke har tagit sig in i systemet!"],
+  ["ERROR 404", "Godiset kunde inte hittas."],
+  ["CRITICAL WARNING", "Ovanlig aktivitet i spökvärlden."],
   ["UPDATE FAILED", "Pumpauppdateringen misslyckades."],
-  ["ERROR 404", "Det efterfrågade godiset saknas."],
-  ["CRITICAL ERROR", "För många spöken i systemet!"],
-  ["SYSTEM ALERT", "En fladdermus har tagit över skrivbordet."],
-  ["WARNING", "Tangentbordet är hemsökt."],
-  ["UPDATE REQUIRED", "Installera fler Halloween-pumpor."],
-  ["ERROR 666", "Mystisk aktivitet upptäckt!"],
-  ["VIRUS DETECTED", "En zombie har hittat dina filer."],
+  ["SYSTEM ERROR", "En häxa har ändrat dina inställningar."],
+  ["ERROR 666", "Mystisk Halloween-aktivitet upptäckt."],
+  ["VIRUS DETECTED", "En zombie knackar på systemdörren."],
   ["CONNECTION LOST", "Kontakt med spökvärlden förlorad."],
-  ["FATAL ERROR", "Spöket vägrar lämna datorn."],
-  ["SYSTEM WARNING", "Fladdermöss upptäckta i systemet."],
+  ["FATAL ERROR", "För många spöken i minnet."],
+  ["UPDATE REQUIRED", "Uppdatera ditt spökskydd."],
+  ["WARNING", "Fladdermöss har upptäckts på skrivbordet."],
+  ["SYSTEM ALERT", "Något rör sig i bakgrunden."],
+  ["ERROR 13", "Den svarta katten har korsat systemet."],
   ["UPDATE FAILED", "Häxkvasten kunde inte uppdateras."],
-  ["SYSTEM ERROR", "Halloween-systemet är hemsökt."],
-  ["FINAL WARNING", "Du har väckt alla 15 spöken!"]
+  ["VIRUS DETECTED", "Ett osynligt spöke har hittats."],
+  ["MEMORY WARNING", "För många kusliga minnen."],
+  ["SYSTEM ERROR", "Datorn har blivit hemsökt."],
+  ["UNKNOWN DEVICE", "Okänd enhet: spökdetektor."],
+  ["SECURITY ALERT", "Någon knackar från andra sidan."],
+  ["ERROR 31", "Pumpan svarar inte."],
+  ["FATAL WARNING", "Spöken blockerar systemet."],
+  ["UPDATE REQUIRED", "Installera nattens mörker."],
+  ["UNKNOWN ERROR", "Vi vet inte vad som hände... 👻"],
+  ["SYSTEM WARNING", "Ditt skrivbord verkar leva."],
+  ["FINAL ERROR", "Du borde nog inte ha öppnat brevet."]
 ];
 
-function playTone(frequency = 440, duration = 0.18) {
-  const AudioClass =
-    window.AudioContext || window.webkitAudioContext;
-
+function playTone(frequency = 440, duration = 0.18, volume = 0.045) {
+  const AudioClass = window.AudioContext || window.webkitAudioContext;
   if (!AudioClass) return;
 
   try {
     audioContext ??= new AudioClass();
 
     if (audioContext.state === "suspended") {
-      audioContext.resume();
+      audioContext.resume().catch(() => {});
     }
 
     const oscillator = audioContext.createOscillator();
@@ -47,30 +60,53 @@ function playTone(frequency = 440, duration = 0.18) {
 
     oscillator.type = "sine";
     oscillator.frequency.setValueAtTime(
-      frequency, audioContext.currentTime
+      frequency,
+      audioContext.currentTime
     );
 
     gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
     gain.gain.exponentialRampToValueAtTime(
-      0.07, audioContext.currentTime + 0.02
+      volume,
+      audioContext.currentTime + 0.025
     );
     gain.gain.exponentialRampToValueAtTime(
-      0.0001, audioContext.currentTime + duration
+      0.0001,
+      audioContext.currentTime + duration
     );
 
     oscillator.connect(gain);
     gain.connect(audioContext.destination);
+
     oscillator.start();
     oscillator.stop(audioContext.currentTime + duration);
   } catch (error) {
-    console.warn("Ljud kunde inte spelas upp.", error);
+    console.warn("Ljudet kunde inte spelas upp.", error);
   }
 }
 
 function playSpookySound() {
-  playTone(130, 0.7);
-  setTimeout(() => playTone(174, 0.8), 180);
-  setTimeout(() => playTone(110, 1), 380);
+  playTone(155, 0.8, 0.035);
+  schedule(() => playTone(196, 0.9, 0.035), 180);
+  schedule(() => playTone(116, 1.1, 0.045), 400);
+}
+
+function playErrorSound(index) {
+  playTone(index % 2 === 0 ? 740 : 520, 0.12, 0.025);
+}
+
+function schedule(callback, delay) {
+  const timer = setTimeout(callback, delay);
+  sequenceTimers.push(timer);
+  return timer;
+}
+
+function cancelSequence() {
+  sequenceTimers.forEach((timer) => {
+    clearTimeout(timer);
+    clearInterval(timer);
+  });
+
+  sequenceTimers = [];
 }
 
 function showToast(message) {
@@ -84,18 +120,15 @@ function showToast(message) {
 }
 
 function openWindow(id) {
+  if (restartInProgress || chaosStarted) return;
+
   $(id).classList.remove("hidden");
-  playTone(520, 0.12);
+  playTone(520, 0.1);
 }
 
 $("openCard").addEventListener("click", () => {
   openWindow("cardWindow");
-  playSpookySound();
-});
-
-$("welcomeOpen").addEventListener("click", () => {
-  openWindow("cardWindow");
-  playSpookySound();
+  if (!chaosStarted && !restartInProgress) playSpookySound();
 });
 
 $("taskbarCard").addEventListener("click", () => {
@@ -113,7 +146,7 @@ $("openBin").addEventListener("click", () => {
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => {
     $(button.dataset.close).classList.add("hidden");
-    playTone(300, 0.1);
+    playTone(330, 0.09);
   });
 });
 
@@ -123,25 +156,29 @@ function createError(message, index) {
   box.setAttribute("role", "dialog");
   box.setAttribute("aria-label", message[0]);
 
-  const width = Math.min(280, desktop.clientWidth - 30);
+  const width = Math.min(285, Math.max(220, desktop.clientWidth - 24));
   const maxX = Math.max(0, desktop.clientWidth - width);
-  const maxY = Math.max(75, desktop.clientHeight - 230);
 
-  box.style.left = `${Math.random() * maxX}px`;
-  box.style.top = `${65 + Math.random() * (maxY - 65)}px`;
+  // Håll felrutorna ovanför aktivitetsfältet.
+  const maxY = Math.max(80, desktop.clientHeight - 245);
+  const x = Math.random() * maxX;
+  const y = 12 + Math.random() * Math.max(0, maxY - 12);
+
+  box.style.left = `${x}px`;
+  box.style.top = `${y}px`;
 
   const title = document.createElement("div");
   title.className = "error-title";
 
-  const label = document.createElement("span");
-  label.textContent = `⚠ ${message[0]}`;
+  const heading = document.createElement("span");
+  heading.textContent = `⚠ ${message[0]}`;
 
   const close = document.createElement("button");
   close.type = "button";
   close.textContent = "×";
   close.setAttribute("aria-label", "Stäng felmeddelandet");
 
-  title.append(label, close);
+  title.append(heading, close);
 
   const body = document.createElement("div");
   body.className = "error-body";
@@ -155,7 +192,7 @@ function createError(message, index) {
 
   const code = document.createElement("strong");
   code.textContent =
-    `ERROR 0x${(4096 + index * 37).toString(16).toUpperCase()}`;
+    `ERROR 0x${(4096 + index * 53).toString(16).toUpperCase()}`;
 
   const description = document.createElement("span");
   description.textContent = message[1];
@@ -169,14 +206,14 @@ function createError(message, index) {
   const ok = document.createElement("button");
   ok.type = "button";
   ok.textContent = "OK";
-  actions.append(ok);
 
+  actions.append(ok);
   box.append(title, body, actions);
   desktop.append(box);
 
   function dismiss() {
     box.remove();
-    playTone(360, 0.08);
+    playTone(340, 0.08, 0.02);
   }
 
   close.addEventListener("click", dismiss);
@@ -184,56 +221,116 @@ function createError(message, index) {
 }
 
 function startChaos() {
-  if (chaosStarted) return;
+  if (chaosStarted || restartInProgress) return;
   chaosStarted = true;
 
   cardWindow.classList.add("hidden");
   updateScreen.classList.remove("hidden");
 
-  showToast("⚠️ Halloween-uppdatering startar...");
-  playTone(260, 0.3);
+  showToast("⚠️ Halloween-systemet uppdateras...");
+  playSpookySound();
 
   const updateMessages = [
-    "Kontrollerar spökfiler...",
+    "Söker efter spöken...",
     "Installerar pumpauppdateringar...",
-    "Startar om spöksystemet..."
+    "Kontrollerar kusliga filer...",
+    "Startar spöksystemet..."
   ];
 
-  const percent = $("updatePercent");
+  const label = $("updatePercent");
   let step = 0;
 
   const progressTimer = setInterval(() => {
-    if (step < updateMessages.length) {
-      percent.textContent = updateMessages[step];
-      playTone(440 + step * 80, 0.12);
-      step++;
-    } else {
+    if (step >= updateMessages.length) {
       clearInterval(progressTimer);
+      return;
     }
-  }, 650);
 
-  chaosTimers.push(progressTimer);
+    label.textContent = updateMessages[step];
+    playTone(420 + step * 65, 0.12, 0.025);
+    step++;
+  }, 550);
 
-  chaosTimers.push(setTimeout(() => {
+  sequenceTimers.push(progressTimer);
+
+  schedule(() => {
     updateScreen.classList.add("hidden");
-    playSpookySound();
 
-    errors.forEach((message, index) => {
-      chaosTimers.push(setTimeout(() => {
+    errorMessages.forEach((message, index) => {
+      schedule(() => {
         createError(message, index);
-        playTone(index % 2 === 0 ? 620 : 420, 0.15);
+        playErrorSound(index);
 
-        if (index === errors.length - 1) {
+        if (index === errorMessages.length - 1) {
           showToast(
-            "👻 15 fejkade fel! Stäng dem med × eller OK."
+            "👻 25 fejkade felmeddelanden! Stäng dem med × eller OK."
           );
         }
-      }, index * 220));
+      }, index * 240);
     });
-  }, 2500));
+  }, 2400);
 }
 
 $("closeCard").addEventListener("click", startChaos);
+
+function startRestart() {
+  if (restartInProgress) return;
+
+  restartInProgress = true;
+  cancelSequence();
+  clearTimeout(toastTimer);
+
+  desktop.querySelectorAll(".error-window").forEach((box) => {
+    box.remove();
+  });
+
+  document.querySelectorAll(".window").forEach((win) => {
+    win.classList.add("hidden");
+  });
+
+  updateScreen.classList.add("hidden");
+  toast.classList.add("hidden");
+  ghostScene.classList.add("hidden");
+
+  blackout.classList.remove("hidden");
+  playTone(95, 0.7, 0.035);
+
+  // Först helt svart. Sedan kommer spöket.
+  schedule(() => {
+    ghostScene.classList.remove("hidden");
+    playSpookySound();
+  }, 1800);
+}
+
+$("restartButton").addEventListener("click", startRestart);
+
+$("returnDesktop").addEventListener("click", () => {
+  cancelSequence();
+
+  blackout.classList.add("hidden");
+  ghostScene.classList.add("hidden");
+
+  chaosStarted = false;
+  restartInProgress = false;
+
+  desktop.querySelectorAll(".error-window").forEach((box) => {
+    box.remove();
+  });
+
+  showToast("🎃 Skrivbordet är tillbaka...");
+  playTone(480, 0.15);
+});
+
+$("startButton").addEventListener("click", () => {
+  if (restartInProgress) return;
+
+  document.querySelectorAll(".window").forEach((win) => {
+    win.classList.add("hidden");
+  });
+
+  showToast("🎃 Halloween OS är redo.");
+  playTone(500, 0.1);
+});
 
 function updateClock() {
   const now = new Date();
@@ -252,25 +349,3 @@ function updateClock() {
 
 updateClock();
 setInterval(updateClock, 1000);
-
-$("startButton").addEventListener("click", () => {
-  chaosTimers.forEach((timer) => {
-    clearTimeout(timer);
-    clearInterval(timer);
-  });
-  chaosTimers = [];
-
-  desktop.querySelectorAll(".error-window").forEach((box) => {
-    box.remove();
-  });
-
-  document.querySelectorAll(".window").forEach((win) => {
-    win.classList.add("hidden");
-  });
-
-  updateScreen.classList.add("hidden");
-  toast.classList.add("hidden");
-  chaosStarted = false;
-
-  showToast("🎃 Skrivbordet är återställt!");
-});
